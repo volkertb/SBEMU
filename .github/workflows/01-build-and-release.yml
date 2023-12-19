@@ -5,7 +5,9 @@ on:
   push:
     tags:
       - v[0-9]+.[0-9]+.[0-9]+
-
+    branches:
+      # TODO: remove the line below when done testing.
+      - use-preinstalled-djgpp-image-in-workflows
 permissions:
   contents: write
 jobs:
