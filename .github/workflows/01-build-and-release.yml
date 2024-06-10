@@ -11,7 +11,7 @@ on:
 permissions:
   contents: write
 jobs:
-  release-job:
+  build-job:
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/volkertb/debian-djgpp:v0.4
@@ -20,8 +20,33 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: src
+      - name: Build project
+        run: |
+          cd $GITHUB_WORKSPACE/src
+          test -f main.c
+          make CC=gcc CXX=g++
+          test -f output/sbemu.exe
+      - name: 'Upload build artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-sbemu-executable
+          path: |
+            src/output/sbemu.exe
+          retention-days: 1
+  release-job:
+    needs: build-job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: src
           # We need this in order to generate a changelog from the commits between the latest and previous tags
           fetch-depth: 0
+      - name: 'Download build artifact'
+        uses: actions/download-artifact@v4
+        with:
+          name: compiled-sbemu-executable
       - name: "✏️ Generate release changelog"
         # Run this step only when the commit being pushed is a tag that is prefixed with a `v`.
         if: startsWith(github.ref, 'refs/tags/v')
@@ -32,12 +57,6 @@ jobs:
           tag: ${{ github.ref_name }}
           includeInvalidCommits: true
           excludeTypes: ""
-      - name: Build project
-        run: |
-          cd $GITHUB_WORKSPACE/src
-          test -f main.c
-          make CC=gcc CXX=g++
-          test -f output/sbemu.exe
       - name: Combine changelog and user instructions into release notes
         run: |
           # Make sure that CHANGELOG.md exists, create empty file if `Generate release changelog` step was skipped:
@@ -45,9 +64,7 @@ jobs:
           cat $GITHUB_WORKSPACE/CHANGELOG.md $GITHUB_WORKSPACE/src/user_instructions.md > $GITHUB_WORKSPACE/RELEASE_NOTES.md
       - name: Build FreeDOS SBEMU USB image and ZIP file
         run: |
-          # TODO : perhaps install these in a newer version of the builder image instead?
-          apt -y update && apt -y install zip xz-utils
-          $GITHUB_WORKSPACE/src/scripts/build-release-artifacts.sh $GITHUB_WORKSPACE/src/output/sbemu.exe $GITHUB_WORKSPACE/RELEASE_NOTES.md $GITHUB_WORKSPACE/
+          $GITHUB_WORKSPACE/src/scripts/build-release-artifacts.sh $GITHUB_WORKSPACE/sbemu.exe $GITHUB_WORKSPACE/RELEASE_NOTES.md $GITHUB_WORKSPACE/
       - name: Generate release tag
         id: tag
         run: |
