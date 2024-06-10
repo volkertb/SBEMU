@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 set -e
 
+if ! command -v sha256sum &> /dev/null
+then
+    echo "sha256sum could not be found, assuming macOS and applying workaround."
+    function sha256sum() { shasum -a 256 "$@" ; } && export -f sha256sum
+fi
+
 PATH_TO_SBEMU_EXE=${1?param 1 missing - path to SBEMU.EXE}
 test -f "$PATH_TO_SBEMU_EXE" || (echo "File $PATH_TO_SBEMU_EXE does not exit"; exit 1)
 FULL_PATH_TO_SBEMU_EXE=$(readlink -f "$PATH_TO_SBEMU_EXE")
@@ -18,15 +24,15 @@ pushd /tmp/sbemu_usb_img
 wget https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/distributions/1.3/official/FD13-LiteUSB.zip
 wget https://www.freedos.org/download/verify.txt
 grep -q "64a934585087ccd91a18c55e20ee01f5f6762be712eeaa5f456be543778f9f7e  FD13-LiteUSB.zip" verify.txt
-echo "64a934585087ccd91a18c55e20ee01f5f6762be712eeaa5f456be543778f9f7e  FD13-LiteUSB.zip" | shasum -a 256 --check
+echo "64a934585087ccd91a18c55e20ee01f5f6762be712eeaa5f456be543778f9f7e  FD13-LiteUSB.zip" | sha256sum --check
 unzip FD13-LiteUSB.zip
 rm FD13-LiteUSB.zip
 wget https://github.com/Baron-von-Riedesel/Jemm/releases/download/v5.84/JemmB_v584.zip
-echo "80bee162c9574066112a3204af6f72666428f7c139836f4418d92aae7bfb5056  JemmB_v584.zip" | shasum -a 256 --check
+echo "80bee162c9574066112a3204af6f72666428f7c139836f4418d92aae7bfb5056  JemmB_v584.zip" | sha256sum --check
 wget https://github.com/crazii/HX/releases/download/v0.1-beta4fix2/HDPMI32i.zip
-echo "69a559f02a954afa2550bf8840adfaa27dad7eeeab93a12b2642c283bf3d5bcb  HDPMI32i.zip" | shasum -a 256 --check
+echo "69a559f02a954afa2550bf8840adfaa27dad7eeeab93a12b2642c283bf3d5bcb  HDPMI32i.zip" | sha256sum --check
 wget https://www.ibiblio.org/pub/micro/pc-stuff/freedos/files/repositories/1.3/base/ctmouse.zip
-echo "a891124cd5b13e8141778fcae718f3b2667b0a49727ce92b782ab11a8c4bb63a  ctmouse.zip" | shasum -a 256 --check
+echo "a891124cd5b13e8141778fcae718f3b2667b0a49727ce92b782ab11a8c4bb63a  ctmouse.zip" | sha256sum --check
 mkdir -p /tmp/SBEMU
 mkdir -p /tmp/mnt
 sudo mount FD13LITE.img /tmp/mnt -t vfat -o loop,offset=$((63*512)),rw,uid="$(id -u)",gid="$(id -g)"
