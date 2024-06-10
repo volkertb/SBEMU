@@ -23,6 +23,8 @@ jobs:
           # We need this in order to generate a changelog from the commits between the latest and previous tags
           fetch-depth: 0
       - name: "✏️ Generate release changelog"
+        # Run this step only when the commit being pushed is a tag that is prefixed with a `v`.
+        if: startsWith(github.ref, 'refs/tags/v')
         id: changelog
         uses: requarks/changelog-action@v1
         with:
@@ -38,6 +40,8 @@ jobs:
           test -f output/sbemu.exe
       - name: Combine changelog and user instructions into release notes
         run: |
+          # Make sure that CHANGELOG.md exists, create empty file if `Generate release changelog` step was skipped:
+          touch $GITHUB_WORKSPACE/CHANGELOG.md
           cat $GITHUB_WORKSPACE/CHANGELOG.md $GITHUB_WORKSPACE/src/user_instructions.md > $GITHUB_WORKSPACE/RELEASE_NOTES.md
       - name: Build FreeDOS SBEMU USB image and ZIP file
         run: |
